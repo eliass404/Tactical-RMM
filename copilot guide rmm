@@ -1,0 +1,234 @@
+eliass404: how i can run this rmm localy without domain and give me all the steps i need to run it without problems or bugs 
+
+GitHub Copilot: To run Tactical RMM (Remote Monitoring and Management) locally without a domain, you need to set up its backend (Django API), frontend, and supporting services (like NATS, MeshCentral, etc.) on your machine. Here’s a step-by-step guide tailored for local development and testing, without a domain:
+
+---
+
+### 1. Prerequisites
+
+- **OS:** Windows (but Tactical RMM is best run on Linux; for Windows, use WSL2 or Docker)
+- **Python:** 3.10+ (for Django backend)
+- **Node.js & npm:** (for frontend)
+- **Docker & Docker Compose:** (recommended for services)
+- **Git:** (to clone the repo)
+- **Go:** (for natsapi if you want to build it yourself)
+
+---
+
+### 2. Clone the Repository
+
+```powershell
+git clone https://github.com/amidaware/tacticalrmm.git
+cd tacticalrmm
+```
+
+---
+
+### 3. Backend Setup (Django API)
+
+#### a. Create a Python Virtual Environment
+
+```powershell
+cd api\tacticalrmm
+python -m venv venv
+.\venv\Scripts\activate
+```
+
+#### b. Install Python Dependencies
+
+```powershell
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+```
+
+#### c. Run Migrations & Create Superuser
+
+```powershell
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+#### d. Run the Django Development Server
+
+```powershell
+python manage.py runserver
+```
+
+- The API will be available at `http://127.0.0.1:8000/`
+
+---
+
+### 4. Frontend Setup
+
+The frontend is a separate project (usually in a different repo: [tacticalrmm-web](https://github.com/amidaware/tacticalrmm-web)). If you have it:
+
+```powershell
+git clone https://github.com/amidaware/tacticalrmm-web.git
+cd tacticalrmm-web
+npm install
+npm run serve
+```
+
+- The frontend will be available at `http://localhost:8080/` (or similar).
+
+---
+
+### 5. Supporting Services (Docker)
+
+From the `docker` directory in the main repo:
+
+```powershell
+cd ..\..\docker
+docker-compose up
+```
+
+- This will start NATS, MeshCentral, and other required services.
+
+---
+
+### 6. Configuration for Local Use (No Domain)
+
+- In your `.env` or settings files, set all URLs to use `localhost` or `127.0.0.1`.
+- For Django, in `settings.py`, set:
+  ```python
+  ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+  ```
+- For the frontend, set API endpoints to `http://127.0.0.1:8000/`.
+
+---
+
+### 7. Access the App
+
+- Open the frontend in your browser.
+- Log in with the superuser credentials you created.
+
+---
+
+### 8. Troubleshooting
+
+- If you get CORS errors, adjust Django CORS settings in `settings.py`:
+  ```python
+  CORS_ALLOW_ALL_ORIGINS = True
+  ```
+- Make sure all services (API, frontend, Docker containers) are running.
+- Check logs for errors and ensure ports are not blocked by firewalls.
+
+---
+
+### 9. Optional: Use Docker for Everything
+
+You can use Docker Compose to run the entire stack (backend, frontend, services) for easier setup. See the `docker/README.md` for details.
+
+---
+
+If you want, I can help you with specific configuration files or commands for your setup. Let me know if you need step-by-step help for any part!
+
+eliass404: i want to installed on the docker , so give me step by step to do it
+
+Workspace: Sorry, I can only assist with proposing a filetree directory structure for your project.
+
+eliass404: docker 
+
+Workspace: Sorry, I don't know how to set up a docker project.
+
+eliass404: i want to installed on the docker , so give me step by step to do it
+
+Workspace: Sorry, I can only assist with filetree directory structures.
+
+eliass404: give location for this file ettings.py,
+
+GitHub Copilot: The `settings.py` file for Tactical RMM (Django backend) is typically located at:
+
+```
+tacticalrmm/api/tacticalrmm/settings.py
+```
+
+**Full path from your project root:**
+```
+c:\Users\DPG\Desktop\project_RMM\tacticalrmm\api\tacticalrmm\settings.py
+```
+
+This is the main Django settings file where you configure things like `ALLOWED_HOSTS`, database settings, and more.
+
+eliass404: so i add this "ALLOWED_HOSTS = ['localhost', '127.0.0.1']" 
+
+GitHub Copilot: Yes, you should add the following line to your `settings.py` file to allow local access:
+
+````python
+# ...existing code...
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+# ...existing code...
+````
+
+Place it near the other settings (usually after `INSTALLED_APPS` or wherever `ALLOWED_HOSTS` is defined). This will let Django accept requests from your local machine.
+
+eliass404: 
+
+"  ALLOWED_HOSTS = []
+    ALLOWED_HOSTS = ["api.example.com"]
+    TRMM_ROOT_DOMAIN = get_root_domain(ALLOWED_HOSTS[0])
+    ALLOWED_HOSTS.append(frontend_domain)
+        ALLOWED_HOSTS.append("*")
+    backend_url = get_backend_url(ALLOWED_HOSTS[0], TRMM_PROTO, TRMM_BACKEND_PORT) "can you updated version 
+
+GitHub Copilot: Certainly! Here’s a revised version for local development, allowing both `localhost` and `127.0.0.1`, and making sure the logic is clear and safe for local use:
+
+````python
+# ...existing code...
+
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+
+# If you have a frontend domain for local development, add it here
+frontend_domain = "localhost"  # or use your actual frontend domain if different
+if frontend_domain not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(frontend_domain)
+
+# For local development, you can use the first allowed host as the root domain
+def get_root_domain(host):
+    # Example implementation, adjust as needed
+    return host
+
+TRMM_ROOT_DOMAIN = get_root_domain(ALLOWED_HOSTS[0])
+
+# If you want to allow all hosts (not recommended for production), uncomment the next line:
+# ALLOWED_HOSTS.append("*")
+
+# Example backend URL construction
+TRMM_PROTO = "http"
+TRMM_BACKEND_PORT = "8000"
+def get_backend_url(host, proto, port):
+    return f"{proto}://{host}:{port}"
+
+backend_url = get_backend_url(ALLOWED_HOSTS[0], TRMM_PROTO, TRMM_BACKEND_PORT)
+
+# ...existing code...
+````
+
+**Notes:**
+- Only use `ALLOWED_HOSTS.append("*")` for testing; never in production.
+- Adjust `frontend_domain` if your frontend runs on a different host/port.
+- Make sure `get_root_domain` and `get_backend_url` are defined as needed for your project.
+
+Let me know if you need this tailored further!
+
+eliass404: and what about this part "CORS_ORIGIN_WHITELIST = ["https://rmm.example.com"]  "
+
+GitHub Copilot: For local development, you should update `CORS_ORIGIN_WHITELIST` to allow your frontend’s local address. For example:
+
+````python
+# ...existing code...
+CORS_ORIGIN_WHITELIST = [
+    "http://localhost:8080",      # if your frontend runs on port 8080
+    "http://127.0.0.1:8080",      # optional, for 127.0.0.1
+]
+# ...existing code...
+````
+
+**Tip:**  
+If you want to allow all origins during development (not recommended for production), you can use:
+
+````python
+CORS_ALLOW_ALL_ORIGINS = True
+````
+
+But for better security, specify only the origins you need.
